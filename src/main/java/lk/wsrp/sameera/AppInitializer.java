@@ -17,6 +17,7 @@ public class AppInitializer extends Application {
     public void start(Stage primaryStage) throws IOException {
         primaryStage.setScene(new Scene(new FXMLLoader(getClass().getResource("/view/MainView.fxml")).load()));
         primaryStage.setHeight(200);
+        primaryStage.setResizable(false);
         primaryStage.setTitle("File/Directory Handling App");
         primaryStage.show();
         primaryStage.centerOnScreen();
