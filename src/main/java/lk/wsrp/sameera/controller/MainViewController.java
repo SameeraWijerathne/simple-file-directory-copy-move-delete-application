@@ -89,7 +89,7 @@ public class MainViewController {
         }
         btnDelete.setDisable(sourceFile == null || targetFolder != null);
     }
-    
+
     private void resetProgress() {
         btnSourceBrowse.getScene().getWindow().setHeight(200);
         prgBar.progressProperty().unbind();
@@ -205,7 +205,25 @@ public class MainViewController {
 
     @FXML
     void btnDeleteOnAction(ActionEvent event) {
+        if (sourceFile.isDirectory()) {
+            deleteDirectory(sourceFile);
+        } else {
+            sourceFile.delete();
+        }
+    }
 
+    private void deleteDirectory(File sourceFile) {
+        File[] files = sourceFile.listFiles();
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                deleteDirectory(file);
+                file.delete();
+            } else {
+                file.delete();
+            }
+        }
+        sourceFile.delete();
     }
 
     @FXML
