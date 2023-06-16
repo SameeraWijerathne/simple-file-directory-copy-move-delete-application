@@ -6,7 +6,7 @@
 
 #btnSourceBrowse:hover,
 #btnDestinationBrowse:hover {
-    -fx-background-color: rgba(0, 128, 0, 0.64);
+    -fx-background-color: rgba(0, 128, 0, 0.8);
 }
 
 #btnDelete {
@@ -15,7 +15,7 @@
 }
 
 #btnDelete:hover {
-    -fx-background-color: rgba(139, 0, 0, 0.6);
+    -fx-background-color: rgba(139, 0, 0, 0.8);
 }
 
 #btnCopy,
@@ -26,5 +26,5 @@
 
 #btnCopy:hover,
 #btnMove:hover{
-    -fx-background-color: rgba(0, 168, 224, 0.64);
+    -fx-background-color: rgba(0, 168, 224, 0.8);
 }
