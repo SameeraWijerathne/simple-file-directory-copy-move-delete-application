@@ -1,5 +1,6 @@
 package lk.wsrp.sameera.controller;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -86,9 +87,9 @@ public class MainViewController {
             button.setDisable(sourceFile == null || targetFolder == null ||
                     sourceFile.getParentFile().equals(targetFolder));
         }
-        btnDelete.setDisable(sourceFile == null);
+        btnDelete.setDisable(sourceFile == null || targetFolder != null);
     }
-
+    
     private void resetProgress() {
         btnSourceBrowse.getScene().getWindow().setHeight(200);
         prgBar.progressProperty().unbind();
@@ -99,16 +100,12 @@ public class MainViewController {
 
     @FXML
     void btnCopyOnAction(ActionEvent event) throws IOException {
-        btnSourceBrowse.setDisable(true);
-        btnDestinationBrowse.setDisable(true);
         File targetFile = new File(targetFolder, sourceFile.getName());
         if (targetFile.exists()) {
             Optional<ButtonType> optResult = new Alert(Alert.AlertType.CONFIRMATION,
                     "File already exists, are you sure to replace the file?",
                     ButtonType.YES, ButtonType.NO).showAndWait();
             if (optResult.isEmpty() || optResult.get() == ButtonType.NO) {
-                btnSourceBrowse.setDisable(false);
-                btnDestinationBrowse.setDisable(false);
                 return;
             }
         }
@@ -116,17 +113,12 @@ public class MainViewController {
 
         if (sourceFile.isDirectory()) {
             copyDirectory(sourceFile, targetFile);
-            btnSourceBrowse.setDisable(false);
-            btnDestinationBrowse.setDisable(false);
 
         } else {
             copyFiles(sourceFile,targetFile);
-            btnSourceBrowse.setDisable(false);
-            btnDestinationBrowse.setDisable(false);
         }
     }
     private void copyDirectory(File sourceFile, File targetDirectory) throws IOException {
-
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
@@ -169,11 +161,33 @@ public class MainViewController {
         lblPercentage.textProperty().bind(task.messageProperty());
         prgBar.progressProperty().bind(task.progressProperty());
         new Thread(task).start();
-
     }
 
     private void copyFiles(File sourceFile, File targetFile) throws IOException {
-
+        Task<Void> task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                FileInputStream fis = new FileInputStream(sourceFile);
+                FileOutputStream fos = new FileOutputStream(targetFile);
+                double write = 0.0;
+                while (true) {
+                    byte[] buffer = new byte[1024 * 1024 * 5];
+                    int read = fis.read(buffer);
+                    write += read;
+                    System.out.println(write);
+                    if (read == -1) break;
+                    fos.write(buffer, 0, read);
+                    updateMessage(String.format("%2.2f", write / sourceFile.length() * 100).concat("% Complete"));
+                    updateProgress(write,sourceFile.length());
+                }
+                fis.close();
+                fos.close();
+                return null;
+            }
+        };
+        lblPercentage.textProperty().bind(task.messageProperty());
+        prgBar.progressProperty().bind(task.progressProperty());
+        new Thread(task).start();
     }
 
     private double getTotalSize(File[] files) {
