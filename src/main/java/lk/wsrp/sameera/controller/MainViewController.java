@@ -1,15 +1,17 @@
 package lk.wsrp.sameera.controller;
 
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Optional;
 
 public class MainViewController {
 
@@ -52,6 +54,9 @@ public class MainViewController {
 
     @FXML
     void btnSourceBrowseOnAction(ActionEvent event) {
+        resetProgress();
+        txtSource.setText("");
+        sourceFile = null;
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         chooser.setDialogTitle("Select a file or directory");
@@ -60,11 +65,13 @@ public class MainViewController {
         enableButtons();
         if (sourceFile == null) return;
         txtSource.setText(chooser.getSelectedFile().toString());
-        System.out.println(sourceFile.getParentFile().length());
     }
 
     @FXML
     void btnDestinationBrowseOnAction(ActionEvent event) {
+        resetProgress();
+        txtDestination.setText("");
+        targetFolder = null;
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select the destination folder");
         targetFolder = directoryChooser.showDialog(btnDestinationBrowse.getScene().getWindow());
@@ -82,9 +89,104 @@ public class MainViewController {
         btnDelete.setDisable(sourceFile == null);
     }
 
-    @FXML
-    void btnCopyOnAction(ActionEvent event) {
+    private void resetProgress() {
+        btnSourceBrowse.getScene().getWindow().setHeight(200);
+        prgBar.progressProperty().unbind();
+        prgBar.setProgress(0);
+        lblPercentage.textProperty().unbind();
+        lblPercentage.setText("0.00%");
+    }
 
+    @FXML
+    void btnCopyOnAction(ActionEvent event) throws IOException {
+        btnSourceBrowse.setDisable(true);
+        btnDestinationBrowse.setDisable(true);
+        File targetFile = new File(targetFolder, sourceFile.getName());
+        if (targetFile.exists()) {
+            Optional<ButtonType> optResult = new Alert(Alert.AlertType.CONFIRMATION,
+                    "File already exists, are you sure to replace the file?",
+                    ButtonType.YES, ButtonType.NO).showAndWait();
+            if (optResult.isEmpty() || optResult.get() == ButtonType.NO) {
+                btnSourceBrowse.setDisable(false);
+                btnDestinationBrowse.setDisable(false);
+                return;
+            }
+        }
+        btnCopy.getScene().getWindow().setHeight(260);
+
+        if (sourceFile.isDirectory()) {
+            copyDirectory(sourceFile, targetFile);
+            btnSourceBrowse.setDisable(false);
+            btnDestinationBrowse.setDisable(false);
+
+        } else {
+            copyFiles(sourceFile,targetFile);
+            btnSourceBrowse.setDisable(false);
+            btnDestinationBrowse.setDisable(false);
+        }
+    }
+    private void copyDirectory(File sourceFile, File targetDirectory) throws IOException {
+
+        Task<Void> task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+
+                if (!targetDirectory.exists()) {
+                    targetDirectory.mkdir();
+                }
+                File[] files = sourceFile.listFiles();
+                double totalSize = getTotalSize(files);
+                double write = 0.0;
+
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        copyDirectory(file, new File(targetDirectory, file.getName()));
+
+                    } else {
+
+                        FileInputStream fis = new FileInputStream(file);
+                        FileOutputStream fos = new FileOutputStream(new File(targetDirectory, file.getName()));
+
+                        while (true) {
+                            byte[] buffer = new byte[1024 * 1024 * 2];
+                            int read = fis.read(buffer);
+                            write += read;
+
+                            if (read == -1) break;
+                            fos.write(buffer, 0, read);
+
+
+                            updateMessage(String.format("%2.2f", write / totalSize * 100).concat("% Complete"));
+                            updateProgress(write,totalSize);
+                        }
+                        fis.close();
+                        fos.close();
+                    }
+                }
+                return null;
+            }
+        };
+        lblPercentage.textProperty().bind(task.messageProperty());
+        prgBar.progressProperty().bind(task.progressProperty());
+        new Thread(task).start();
+
+    }
+
+    private void copyFiles(File sourceFile, File targetFile) throws IOException {
+
+    }
+
+    private double getTotalSize(File[] files) {
+        double total = 0;
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                total += getTotalSize(file.listFiles());
+            } else {
+                total += file.length();
+            }
+        }
+        return total;
     }
 
     @FXML
