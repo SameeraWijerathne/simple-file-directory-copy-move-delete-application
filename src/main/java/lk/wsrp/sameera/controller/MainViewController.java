@@ -41,6 +41,7 @@ public class MainViewController {
     private TextField txtDestination;
     private File sourceFile;
     private File targetFolder;
+    private boolean moveFiles = false;
 
     @FXML
     private TextField txtSource;
@@ -58,6 +59,7 @@ public class MainViewController {
         resetProgress();
         txtSource.setText("");
         sourceFile = null;
+        moveFiles = false;
         JFileChooser chooser = new JFileChooser();
         chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
         chooser.setDialogTitle("Select a file or directory");
@@ -87,7 +89,7 @@ public class MainViewController {
             button.setDisable(sourceFile == null || targetFolder == null ||
                     sourceFile.getParentFile().equals(targetFolder));
         }
-        btnDelete.setDisable(sourceFile == null || targetFolder != null);
+        btnDelete.setDisable(sourceFile == null);
     }
 
     private void resetProgress() {
@@ -109,7 +111,7 @@ public class MainViewController {
                 return;
             }
         }
-        btnCopy.getScene().getWindow().setHeight(260);
+        btnCopy.getScene().getWindow().setHeight(280);
 
         if (sourceFile.isDirectory()) {
             copyDirectory(sourceFile, targetFile);
@@ -155,6 +157,11 @@ public class MainViewController {
                         fos.close();
                     }
                 }
+                if (moveFiles == true) {
+
+                    updateMessage("100.00% Complete");
+                    btnDelete.fire();
+                }
                 return null;
             }
         };
@@ -182,6 +189,9 @@ public class MainViewController {
                 }
                 fis.close();
                 fos.close();
+                if (moveFiles == true) {
+                    btnDelete.fire();
+                }
                 return null;
             }
         };
@@ -227,7 +237,8 @@ public class MainViewController {
     }
 
     @FXML
-    void btnMoveOnAction(ActionEvent event) {
-
+    void btnMoveOnAction(ActionEvent event) throws IOException {
+        moveFiles = true;
+        btnCopy.fire();
     }
 }
