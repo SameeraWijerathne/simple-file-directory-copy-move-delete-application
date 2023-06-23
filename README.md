@@ -1,6 +1,8 @@
 # <b>Simple File/Directory Management Application</b>
 
+<p align="center">
 <img src="src/main/resources/img/image1.png" width="500px" height="250px">
+</p>
 
 
 <p>This is a simple project to explore Java's powerful file handling capabilities. This project allowed me to gain hands-on experience in working with file I/O , managing directories, and performing various file operations using Java SE File I/O API
